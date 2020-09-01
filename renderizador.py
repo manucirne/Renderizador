@@ -14,8 +14,18 @@ import interface
 import gpu
 
 def polypoint2D(point, color):
+    print(point)
+    r = int(255*color[0])
+    g = int(255*color[1])
+    b = int(255*color[2])   # ((point[i + 1] - int(point[i + 1])) < 0.5) and 
+    for i in range(0,len(point),2):
+        x = int(point[i]) if (((point[i] - int(point[i])) < 0.8) or (int(point[i]) + 1) > 29) else int(point[i]) + 1
+        y = int(point[i + 1]) if (((point[i + 1] - int(point[i + 1])) < 0.8) or ((int(point[i + 1]) + 1) > 19)) else int(point[i + 1]) + 1
+        print(x, y)
+        gpu.GPU.set_pixel(x, y, r, g, b)
+        
     """ Função usada para renderizar Polypoint2D. """
-    gpu.GPU.set_pixel(3, 1, 255, 0, 0) # altera um pixel da imagem
+    # gpu.GPU.set_pixel(3, 1, 255, 0, 0) # altera um pixel da imagem
     # cuidado com as cores, o X3D especifica de (0,1) e o Framebuffer de (0,255)
 
 def polyline2D(lineSegments, color):
