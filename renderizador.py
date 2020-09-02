@@ -8,15 +8,27 @@ import interface    # Janela de visualização baseada no Matplotlib
 import gpu          # Simula os recursos de uma GPU
 
 def polypoint2D(point, color):
-    print(point)
     r = int(255*color[0])
     g = int(255*color[1])
-    b = int(255*color[2])   # ((point[i + 1] - int(point[i + 1])) < 0.5) and 
+    b = int(255*color[2])
     for i in range(0,len(point),2):
-        x = int(point[i]) if (((point[i] - int(point[i])) < 0.8) or (int(point[i]) + 1) > 29) else int(point[i]) + 1
-        y = int(point[i + 1]) if (((point[i + 1] - int(point[i + 1])) < 0.8) or ((int(point[i + 1]) + 1) > 19)) else int(point[i + 1]) + 1
-        print(x, y)
+        diffx = ((point[i] - int(point[i])))
+        diffy = ((point[i + 1] - int(point[i + 1])))
+        x = int(point[i]) if (((diffx < 0.8) and (diffx > 0.2)) or (int(point[i]) + 1) < 29) else int(point[i]) + 1
+        y = int(point[i + 1]) if (((diffy < 0.8) and (diffy > 0.2)) or ((int(point[i + 1]) + 1) < 19)) else int(point[i + 1]) + 1
         gpu.GPU.set_pixel(x, y, r, g, b)
+        if (diffx <= 0.3) and ((x - 1) >= 0):
+            gpu.GPU.set_pixel(int(point[i]) - 1, y, r*(0.5-diffx), g*(0.5-diffx), b*(0.5-diffx))
+        if (diffy <= 0.3) and ((y - 1) >= 0):
+            gpu.GPU.set_pixel(x, int(point[i + 1]) - 1, r*(0.5-diffy), g*(0.5-diffy), b*(0.5-diffy))
+        if (diffx >= 0.8) and ((x + 1) <= 29):
+            gpu.GPU.set_pixel(int(point[i]) + 1, y, r*(0.5-diffx), g*(0.5-diffx), b*(0.5-diffx))
+        if (diffy >= 0.8) and ((y + 1) <= 19):
+            gpu.GPU.set_pixel(x, int(point[i + 1]) + 1, r*(0.5-diffy), g*(0.5-diffy), b*(0.5-diffy))
+        if ((diffx <= 0.3) and ((x - 1) >= 0)) and ((diffy <= 0.3) and ((y - 1) >= 0)):
+            gpu.GPU.set_pixel(int(point[i]) - 1, int(point[i + 1]) - 1, r*(0.5-diffx), g*(0.5-diffx), b*(0.5-diffx))
+        if ((diffy >= 0.8) and ((y + 1) <= 19)) and ((diffx >= 0.8) and ((x + 1) <= 29)):
+            gpu.GPU.set_pixel(int(point[i]) + 1, int(point[i + 1]) + 1, r*(0.5-diffy), g*(0.5-diffy), b*(0.5-diffy))
         
     """ Função usada para renderizar Polypoint2D. """
     # gpu.GPU.set_pixel(3, 1, 255, 0, 0) # altera um pixel da imagem
