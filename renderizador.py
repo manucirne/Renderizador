@@ -13,6 +13,15 @@ import interface
 # GPU
 import gpu
 
+def line_equation(P1, P2):
+    A = P1[1] - P2[1]
+    B = P2[0] - P1[0]
+    C = P1[0]*P2[1] - P1[1]*P2[0]
+    return A, B, C
+
+def calculate_L(line, x, y):
+    return line[0]*x + line[1]*y + line[2]
+
 def polypoint2D(point, color):
     r = int(255*color[0])
     g = int(255*color[1])
@@ -65,8 +74,6 @@ def polyline2D(lineSegments, color):
     else:
         sy = -1
     err = dx-dy
-    print(err)
-    print(color)
     prevx0 = x0
     prevy0 = y0
     while not ((y0 == y1) and (x0 == x1)):
@@ -93,7 +100,20 @@ def polyline2D(lineSegments, color):
 
 def triangleSet2D(vertices, color):
     """ Função usada para renderizar TriangleSet2D. """
-    gpu.GPU.set_pixel(24, 8, 255, 255, 0) # altera um pixel da imagem
+    r = int(255*color[0])
+    g = int(255*color[1])
+    b = int(255*color[2])
+    line1 = line_equation((vertices[0], vertices[1]), (vertices[2], vertices[3]))
+    line2 = line_equation((vertices[2], vertices[3]),(vertices[4], vertices[5]))
+    line3 = line_equation((vertices[4], vertices[5]), (vertices[0], vertices[1]))
+    for i in range(30):
+        for j in range(20):
+            L1 = calculate_L(line1, i+0.5, j+0.5)
+            L2 = calculate_L(line2, i+0.5, j+0.5)
+            L3 = calculate_L(line3, i+0.5, j+0.5)
+            if (L1<0 and L2<0 and L3<0):
+                gpu.GPU.set_pixel(i, j, r, g, b) # altera um pixel da imagem
+                
 
 LARGURA = 30
 ALTURA = 20
@@ -102,7 +122,7 @@ if __name__ == '__main__':
     
     width = LARGURA
     height = ALTURA
-    x3d_file = "exemplo2.x3d"
+    x3d_file = "exemplo3.x3d"
     image_file = "tela.png"
 
     # Tratando entrada de parâmetro
