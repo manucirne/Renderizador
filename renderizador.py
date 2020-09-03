@@ -19,8 +19,38 @@ def line_equation(P1, P2):
     C = P1[0]*P2[1] - P1[1]*P2[0]
     return A, B, C
 
-def calculate_L(line, x, y):
+def calculate_one_L(line, x, y):
     return line[0]*x + line[1]*y + line[2]
+
+def inside(L1, L2, L3):
+    return (L1<0 and L2<0 and L3<0)
+
+def calculate_1_2_3(lines, x, y):
+    result = []
+    for line in lines:
+        result.append(calculate_one_L(line, x, y))
+    return result
+
+def calculate_all_L(line1, line2, line3, x, y):
+    total = 0
+    l1, l2, l3 = calculate_1_2_3([line1, line2, line3], x+0.25, y+0.25)
+    if (inside(l1, l2, l3)):
+        total += 0.25
+    
+    l1, l2, l3 = calculate_1_2_3([line1, line2, line3], x+0.75, y+0.25)
+    if (inside(l1, l2, l3)):
+        total += 0.25
+
+    l1, l2, l3 = calculate_1_2_3([line1, line2, line3], x+0.25, y+0.75)
+    if (inside(l1, l2, l3)):
+        total += 0.25
+
+    l1, l2, l3 = calculate_1_2_3([line1, line2, line3], x+0.75, y+0.75)
+    if (inside(l1, l2, l3)):
+        total += 0.25
+    
+    return total
+
 
 def polypoint2D(point, color):
     r = int(255*color[0])
@@ -108,11 +138,12 @@ def triangleSet2D(vertices, color):
     line3 = line_equation((vertices[4], vertices[5]), (vertices[0], vertices[1]))
     for i in range(30):
         for j in range(20):
-            L1 = calculate_L(line1, i+0.5, j+0.5)
-            L2 = calculate_L(line2, i+0.5, j+0.5)
-            L3 = calculate_L(line3, i+0.5, j+0.5)
-            if (L1<0 and L2<0 and L3<0):
-                gpu.GPU.set_pixel(i, j, r, g, b) # altera um pixel da imagem
+            per_inside = calculate_all_L(line1, line2, line3, i, j)
+            r_p = int(r*per_inside)
+            g_p = int(g*per_inside)
+            b_p = int(b*per_inside)
+            if per_inside>0:
+                gpu.GPU.set_pixel(i, j, r_p, g_p, b_p) # altera um pixel da imagem
                 
 
 LARGURA = 30
