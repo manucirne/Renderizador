@@ -118,13 +118,13 @@ def polyline2D(lineSegments, color):
             y0 = y0 + sy
         if (prevx0 != x0) and (prevy0 != y0):
             if(err > 6):
-                gpu.GPU.set_pixel(x0, y0 - sy, r, g, b)
+                gpu.GPU.set_pixel(x0, y0 - sy, r*0.5, g*0.5, b*0.5)
             elif(err < -6):
-                gpu.GPU.set_pixel(x0 - sx, y0, r, g, b)
+                gpu.GPU.set_pixel(x0 - sx, y0, r*0.5, g*0.5, b*0.5)
             elif (err < 0):
-                gpu.GPU.set_pixel(x0 + sx, y0 + sy, r, g, b)
+                gpu.GPU.set_pixel(x0 + sx, y0 + sy, r*0.5, g*0.5, b*0.5)
             else:
-                gpu.GPU.set_pixel(x0 - sx, y0 - sy, r, g, b)
+                gpu.GPU.set_pixel(x0 - sx, y0 - sy, r*0.5, g*0.5, b*0.5)
             prevx0 = x0
             prevy0 = y0
 
@@ -153,7 +153,7 @@ if __name__ == '__main__':
     
     width = LARGURA
     height = ALTURA
-    x3d_file = "exemplo3.x3d"
+    x3d_file = "exemplo2.x3d"
     image_file = "tela.png"
 
     # Tratando entrada de parâmetro
