@@ -36,9 +36,52 @@ def polypoint2D(point, color):
 
 def polyline2D(lineSegments, color):
     """ Função usada para renderizar Polyline2D. """
-    x = gpu.GPU.width//2
-    y = gpu.GPU.height//2
-    gpu.GPU.set_pixel(x, y, 255, 0, 0) # altera um pixel da imagem
+    # referência http://floppsie.comp.glam.ac.uk/Southwales/gaius/gametools/6.html
+    r = int(255*color[0])
+    g = int(255*color[1])
+    b = int(255*color[2])
+    x0 = int(lineSegments[0])
+    y0 = int(lineSegments[1])
+    x1 = int(lineSegments[2])
+    y1 = int(lineSegments[3])
+    dx = abs(x1-x0)
+    dy = abs(y1-y0)
+    gpu.GPU.set_pixel(x0, y0, r, g, b)
+    gpu.GPU.set_pixel(x1, y1, r, g, b)
+    
+    if x0 < x1:
+        sx = 1
+    else:
+        sx = -1
+
+    if y0 < y1:
+        sy = 1
+    else:
+        sy = -1
+    err = dx-dy
+    prevx0 = x0
+    prevy0 = y0
+    while not ((y0 == y1) and (x0 == x1)):
+        if (x0*sx <= x1) and (y0*sy <= y1):
+            gpu.GPU.set_pixel(x0, y0, r, g, b)
+        e2 = 2*err
+        if (e2 > -dy):
+            err = err - dy
+            x0 = x0 + sx
+        if e2 < dx:
+            err = err + dx
+            y0 = y0 + sy
+        if (prevx0 != x0) and (prevy0 != y0):
+            if(err > 6):
+                gpu.GPU.set_pixel(x0, y0 - sy, r, g, b)
+            elif(err < -6):
+                gpu.GPU.set_pixel(x0 - sx, y0, r, g, b)
+            elif (err < 0):
+                gpu.GPU.set_pixel(x0 + sx, y0 + sy, r, g, b)
+            else:
+                gpu.GPU.set_pixel(x0 - sx, y0 - sy, r, g, b)
+            prevx0 = x0
+            prevy0 = y0
 
 def triangleSet2D(vertices, color):
     """ Função usada para renderizar TriangleSet2D. """
@@ -87,7 +130,7 @@ if __name__ == '__main__':
     # Valores padrão da aplicação
     width = LARGURA
     height = ALTURA
-    x3d_file = "exemplo4.x3d"
+    x3d_file = "exemplo3.x3d"
     image_file = "tela.png"
 
     # Tratando entrada de parâmetro
