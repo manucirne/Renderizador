@@ -7,6 +7,45 @@ import x3d          # Faz a leitura do arquivo X3D, gera o grafo de cena e faz t
 import interface    # Janela de visualização baseada no Matplotlib
 import gpu          # Simula os recursos de uma GPU
 
+def line_equation(P1, P2):
+    A = P1[1] - P2[1]
+    B = P2[0] - P1[0]
+    C = P1[0]*P2[1] - P1[1]*P2[0]
+    return A, B, C
+
+def calculate_one_L(line, x, y):
+    return line[0]*x + line[1]*y + line[2]
+
+def inside(L1, L2, L3):
+    return (L1<0 and L2<0 and L3<0)
+
+def calculate_1_2_3(lines, x, y):
+    result = []
+    for line in lines:
+        result.append(calculate_one_L(line, x, y))
+    return result
+
+def calculate_all_L(line1, line2, line3, x, y):
+    total = 0
+    l1, l2, l3 = calculate_1_2_3([line1, line2, line3], x+0.25, y+0.25)
+    if (inside(l1, l2, l3)):
+        total += 0.25
+    
+    l1, l2, l3 = calculate_1_2_3([line1, line2, line3], x+0.75, y+0.25)
+    if (inside(l1, l2, l3)):
+        total += 0.25
+
+    l1, l2, l3 = calculate_1_2_3([line1, line2, line3], x+0.25, y+0.75)
+    if (inside(l1, l2, l3)):
+        total += 0.25
+
+    l1, l2, l3 = calculate_1_2_3([line1, line2, line3], x+0.75, y+0.75)
+    if (inside(l1, l2, l3)):
+        total += 0.25
+    
+    return total
+
+
 def polypoint2D(point, color):
     r = int(255*color[0])
     g = int(255*color[1])
@@ -73,19 +112,33 @@ def polyline2D(lineSegments, color):
             y0 = y0 + sy
         if (prevx0 != x0) and (prevy0 != y0):
             if(err > 6):
-                gpu.GPU.set_pixel(x0, y0 - sy, r, g, b)
+                gpu.GPU.set_pixel(x0, y0 - sy, r*0.5, g*0.5, b*0.5)
             elif(err < -6):
-                gpu.GPU.set_pixel(x0 - sx, y0, r, g, b)
+                gpu.GPU.set_pixel(x0 - sx, y0, r*0.5, g*0.5, b*0.5)
             elif (err < 0):
-                gpu.GPU.set_pixel(x0 + sx, y0 + sy, r, g, b)
+                gpu.GPU.set_pixel(x0 + sx, y0 + sy, r*0.5, g*0.5, b*0.5)
             else:
-                gpu.GPU.set_pixel(x0 - sx, y0 - sy, r, g, b)
+                gpu.GPU.set_pixel(x0 - sx, y0 - sy, r*0.5, g*0.5, b*0.5)
             prevx0 = x0
             prevy0 = y0
 
 def triangleSet2D(vertices, color):
     """ Função usada para renderizar TriangleSet2D. """
-    gpu.GPU.set_pixel(24, 8, 255, 255, 0) # altera um pixel da imagem
+    r = int(255*color[0])
+    g = int(255*color[1])
+    b = int(255*color[2])
+    line1 = line_equation((vertices[0], vertices[1]), (vertices[2], vertices[3]))
+    line2 = line_equation((vertices[2], vertices[3]),(vertices[4], vertices[5]))
+    line3 = line_equation((vertices[4], vertices[5]), (vertices[0], vertices[1]))
+    for i in range(30):
+        for j in range(20):
+            per_inside = calculate_all_L(line1, line2, line3, i, j)
+            r_p = int(r*per_inside)
+            g_p = int(g*per_inside)
+            b_p = int(b*per_inside)
+            if per_inside>0:
+                gpu.GPU.set_pixel(i, j, r_p, g_p, b_p) # altera um pixel da imagem
+                
 
 def triangleSet(point, color):
     """ Função usada para renderizar TriangleSet. """
