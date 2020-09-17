@@ -139,7 +139,7 @@ def triangleSet2D(vertices, color):
             b_p = int(b*per_inside)
             if per_inside>0:
                 gpu.GPU.set_pixel(i, j, r_p, g_p, b_p) # altera um pixel da imagem
-                
+
 
 def triangleSet(point, color):
     """ Função usada para renderizar TriangleSet. """
@@ -147,7 +147,6 @@ def triangleSet(point, color):
     r = int(255*color[0])
     g = int(255*color[1])
     b = int(255*color[2])
-    print(r)
     # for i in range(0,len(point),3):
     #     gpu.GPU.set_pixel(int(point[i]) + 1, int(point[i + 1]) + 1, r, g, b)
 stack_transform = []
