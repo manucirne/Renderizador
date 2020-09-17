@@ -143,10 +143,15 @@ def triangleSet2D(vertices, color):
 def triangleSet(point, color):
     """ Função usada para renderizar TriangleSet. """
     print("TriangleSet : pontos = {0}".format(point)) # imprime no terminal pontos
+    r = int(255*color[0])
+    g = int(255*color[1])
+    b = int(255*color[2])
+    # for i in range(0,len(point),3):
+    #     gpu.GPU.set_pixel(int(point[i]) + 1, int(point[i + 1]) + 1, r, g, b)
 
 def viewpoint(position, orientation, fieldOfView):
     """ Função usada para renderizar (na verdade coletar os dados) de Viewpoint. """
-    print("Viewpoint : position = {0}, orientation = {0}, fieldOfView = {0}".format(position, orientation, fieldOfView)) # imprime no terminal
+    print("Viewpoint : position = {0}, orientation = {1}, fieldOfView = {2}".format(position, orientation, fieldOfView)) # imprime no terminal
 
 def transform(translation, scale, rotation):
     """ Função usada para renderizar (na verdade coletar os dados) de Transform. """
@@ -183,7 +188,7 @@ if __name__ == '__main__':
     # Valores padrão da aplicação
     width = LARGURA
     height = ALTURA
-    x3d_file = "exemplo3.x3d"
+    x3d_file = "exemplo4.x3d"
     image_file = "tela.png"
 
     # Tratando entrada de parâmetro
