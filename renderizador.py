@@ -6,6 +6,7 @@ import argparse     # Para tratar os parâmetros da linha de comando
 import x3d          # Faz a leitura do arquivo X3D, gera o grafo de cena e faz traversal
 import interface    # Janela de visualização baseada no Matplotlib
 import gpu          # Simula os recursos de uma GPU
+from math import *
 
 def line_equation(P1, P2):
     A = P1[1] - P2[1]
@@ -149,7 +150,7 @@ def triangleSet(point, color):
     print(r)
     # for i in range(0,len(point),3):
     #     gpu.GPU.set_pixel(int(point[i]) + 1, int(point[i + 1]) + 1, r, g, b)
-
+stack_transform = []
 def viewpoint(position, orientation, fieldOfView):
     """ Função usada para renderizar (na verdade coletar os dados) de Viewpoint. """
     print("Viewpoint : position = {0}, orientation = {1}, fieldOfView = {2}".format(position, orientation, fieldOfView)) # imprime no terminal
@@ -158,10 +159,19 @@ def transform(translation, scale, rotation):
     """ Função usada para renderizar (na verdade coletar os dados) de Transform. """
     print("Transform : ", end = '')
     if translation:
+        stack_transform.append([[0, 0, 0, translation[0]],[0, 0, 0, translation[1]],[0, 0, 0, translation[2]], [0, 0, 0, 1]])
         print("translation = {0} ".format(translation), end = '') # imprime no terminal
     if scale:
+        stack_transform.append([[scale[0], 0, 0, 0],[0, scale[1], 0, 0],[0, 0, scale[2], 0], [0, 0, 0, 1]])
         print("scale = {0} ".format(scale), end = '') # imprime no terminal
     if rotation:
+        if rotation[0]:
+            stack_transform.append([[1, 0, 0, 0], [0, cos(rotation[4]), -sin(rotation[4]), 0], [0, sin(rotation[4]), cos(rotation[4]), 0], [0, 0, 0, 1]])
+        elif rotation[1]:
+            stack_transform.append([[cos(rotation[4]), 0, sin(rotation[4]), 0], [0, 1, 0, 0], [-sin(rotation[4]), 0, cos(rotation[4]), 0], [0, 0, 0, 1]])
+        elif rotation[2]:
+            stack_transform.append([[cos(rotation[4]), 0, -sin(rotation[4]), 0], [sin(rotation[4]), cos(rotation[4]), 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]])
+        
         print("rotation = {0} ".format(rotation), end = '') # imprime no terminal
     print("")
 
@@ -189,7 +199,7 @@ if __name__ == '__main__':
     # Valores padrão da aplicação
     width = LARGURA
     height = ALTURA
-    x3d_file = "exemplo4.x3d"
+    x3d_file = "exemplo5.x3d"
     image_file = "tela.png"
 
     # Tratando entrada de parâmetro
