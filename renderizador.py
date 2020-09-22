@@ -157,19 +157,16 @@ def triangleSet(point, color):
     r = int(255*color[0])
     g = int(255*color[1])
     b = int(255*color[2])
-    # for i in range(0,len(point),3):
-    #     gpu.GPU.set_pixel(int(point[i]) + 1, int(point[i + 1]) + 1, r, g, b)
+    for i in range(0,len(point),3):
+        gpu.GPU.set_pixel(int(point[i]) + 1, int(point[i + 1]) + 1, r, g, b)
 stack_transform = []
 def viewpoint(position, orientation, fieldOfView):
     """ Função usada para renderizar (na verdade coletar os dados) de Viewpoint. """
-<<<<<<< HEAD
-=======
     # Na função de viewpoint você receberá a posição, orientação e campo de visão da
     # câmera virtual. Use esses dados para poder calcular e criar a matriz de projeção
     # perspectiva para poder aplicar nos pontos dos objetos geométricos.
 
     # O print abaixo é só para vocês verificarem o funcionamento, deve ser removido.
->>>>>>> ec279e23d876e84c1459f69e2a3e28f924ccdf9d
     print("Viewpoint : position = {0}, orientation = {1}, fieldOfView = {2}".format(position, orientation, fieldOfView)) # imprime no terminal
 
 def transform(translation, scale, rotation):
@@ -192,11 +189,11 @@ def transform(translation, scale, rotation):
         print("scale = {0} ".format(scale), end = '') # imprime no terminal
     if rotation:
         if rotation[0]:
-            stack_transform.append([[1, 0, 0, 0], [0, cos(rotation[4]), -sin(rotation[4]), 0], [0, sin(rotation[4]), cos(rotation[4]), 0], [0, 0, 0, 1]])
+            stack_transform.append([[1, 0, 0, 0], [0, cos(rotation[3]), -sin(rotation[3]), 0], [0, sin(rotation[3]), cos(rotation[3]), 0], [0, 0, 0, 1]])
         elif rotation[1]:
-            stack_transform.append([[cos(rotation[4]), 0, sin(rotation[4]), 0], [0, 1, 0, 0], [-sin(rotation[4]), 0, cos(rotation[4]), 0], [0, 0, 0, 1]])
+            stack_transform.append([[cos(rotation[3]), 0, sin(rotation[3]), 0], [0, 1, 0, 0], [-sin(rotation[3]), 0, cos(rotation[3]), 0], [0, 0, 0, 1]])
         elif rotation[2]:
-            stack_transform.append([[cos(rotation[4]), 0, -sin(rotation[4]), 0], [sin(rotation[4]), cos(rotation[4]), 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]])
+            stack_transform.append([[cos(rotation[3]), 0, -sin(rotation[3]), 0], [sin(rotation[3]), cos(rotation[3]), 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]])
         
         print("rotation = {0} ".format(rotation), end = '') # imprime no terminal
     print("")
@@ -207,6 +204,8 @@ def _transform():
     # grafo de cena. Não são passados valores, porém quando se sai de um nó transform se
     # deverá recuperar a matriz de transformação dos modelos do mundo da estrutura de
     # pilha implementada.
+    trans = stack_transform.pop()
+
 
     # O print abaixo é só para vocês verificarem o funcionamento, deve ser removido.
     print("Saindo de Transform")
@@ -264,7 +263,7 @@ if __name__ == '__main__':
     # Valores padrão da aplicação
     width = LARGURA
     height = ALTURA
-    x3d_file = "exemplo5.x3d"
+    x3d_file = "exemplo4.x3d"
     image_file = "tela.png"
 
     # Tratando entrada de parâmetro
