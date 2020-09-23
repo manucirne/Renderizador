@@ -10,8 +10,8 @@ from math import *  # para operações geométricas
 import numpy as np  # para lidar com as matrizes
 
 
-height = 20*4
-width = 30*4
+height = 200
+width = 300
 
 class perspectiveAndTransformations:
 
@@ -218,7 +218,7 @@ def polyline2D(lineSegments, color):
             prevx0 = x0
             prevy0 = y0
 
-def triangleSet2D(vertices, color):
+def triangleSet2D(vertices, color, antialiasing = True):
     """ Função usada para renderizar TriangleSet2D. """
     r = int(255*color[0])
     g = int(255*color[1])
@@ -229,14 +229,17 @@ def triangleSet2D(vertices, color):
     for i in range(width):
         for j in range(height):
             per_inside = calculate_all_L(line1, line2, line3, i, j)
-            r_p = int(r*per_inside)
-            g_p = int(g*per_inside)
-            b_p = int(b*per_inside)
-            if per_inside>0:
-                gpu.GPU.set_pixel(i, j, r_p, g_p, b_p) # altera um pixel da imagem
+            if (antialiasing):
+                r_p = int(r*per_inside)
+                g_p = int(g*per_inside)
+                b_p = int(b*per_inside)
+                if per_inside>0:
+                    gpu.GPU.set_pixel(i, j, r_p, g_p, b_p) # altera um pixel da imagem
+            else:
+                if per_inside>0:
+                    gpu.GPU.set_pixel(i, j, r, g, b) # altera um pixel da imagem
 
-
-def triangleSet(point, color):
+def triangleSet(point, color, antializasing = True):
     mat_width = int(len(point)/3)
     points = np.append(np.reshape(point, (mat_width, 3)).transpose(), np.ones((1, mat_width)), axis=0)
     points = np.matmul(pAndT.stack_transform[-1], points)
@@ -249,7 +252,7 @@ def triangleSet(point, color):
     points = points[:2].transpose().reshape(mat_width*2)
     for i in range(0, len(points), 6):
 
-        triangleSet2D(points[i:i+6], color)
+        triangleSet2D(points[i:i+6], color, antializasing)
 
 
 def viewpoint(position, orientation, fieldOfView):
@@ -277,24 +280,24 @@ def transform(translation, scale, rotation):
 def _transform():
     pAndT.actualTransformation()
 
-def triangleStripSet(point, stripCount, color):
+def triangleStripSet(point, stripCount, color, antialiasing = False):
     for i in range(int(stripCount[0]) - 2):
         pos = i*3
         if i % 2 == 0:
-            triangleSet([point[pos], point[pos + 1], point[pos + 2], point[pos + 3], point[pos + 4], point[pos + 5], point[pos + 6], point[pos + 7], point[pos + 8]], color)
+            triangleSet([point[pos], point[pos + 1], point[pos + 2], point[pos + 3], point[pos + 4], point[pos + 5], point[pos + 6], point[pos + 7], point[pos + 8]], color, antialiasing)
         else:
-            triangleSet([point[pos + 3], point[pos + 4], point[pos + 5], point[pos], point[pos + 1], point[pos + 2], point[pos + 6], point[pos + 7], point[pos + 8]], color)
+            triangleSet([point[pos + 3], point[pos + 4], point[pos + 5], point[pos], point[pos + 1], point[pos + 2], point[pos + 6], point[pos + 7], point[pos + 8]], color, antialiasing)
 
-def indexedTriangleStripSet(point, index, color):
+def indexedTriangleStripSet(point, index, color, antialiasing = False):
 
     for i in range(len(index) - 3):
         pos1 = int(index[i]*3)
         pos2 = int(index[i + 1]*3)
         pos3 = int(index[i + 2]*3)
         if i % 2 == 0:
-            triangleSet([point[pos1], point[pos1 + 1], point[pos1 + 2], point[pos2], point[pos2 + 1], point[pos2 + 2], point[pos3], point[pos3 + 1], point[pos3 + 2]], color)
+            triangleSet([point[pos1], point[pos1 + 1], point[pos1 + 2], point[pos2], point[pos2 + 1], point[pos2 + 2], point[pos3], point[pos3 + 1], point[pos3 + 2]], color, antialiasing)
         else:
-            triangleSet([point[pos2], point[pos2 + 1], point[pos2 + 2], point[pos1], point[pos1 + 1], point[pos1 + 2], point[pos3], point[pos3 + 1], point[pos3 + 2]], color)
+            triangleSet([point[pos2], point[pos2 + 1], point[pos2 + 2], point[pos1], point[pos1 + 1], point[pos1 + 2], point[pos3], point[pos3 + 1], point[pos3 + 2]], color, antialiasing)
 
 
 
@@ -306,9 +309,9 @@ def box(size, color):
     side = [-x, -y, -z, -x, -y, z, -x, y, -z, -x, y, z, x, y, -z, x, y, z, x, -y, -z, x, -y, z]
     back = [-x, -y, -z, -x, y, -z, x, -y, -z, x, y, -z]
     front = [-x, -y, z, x, -y, z, -x, y, z, x, y, z]
-    triangleStripSet(side, [8], color)
-    triangleStripSet(back, [4], color)
-    triangleStripSet(front, [4], color)
+    triangleStripSet(side, [8], color, True)
+    triangleStripSet(back, [4], color, True)
+    triangleStripSet(front, [4], color, True)
 
 
 # LARGURA = 30*4
