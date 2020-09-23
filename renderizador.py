@@ -6,7 +6,105 @@ import argparse     # Para tratar os parâmetros da linha de comando
 import x3d          # Faz a leitura do arquivo X3D, gera o grafo de cena e faz traversal
 import interface    # Janela de visualização baseada no Matplotlib
 import gpu          # Simula os recursos de uma GPU
-from math import *
+from math import *  # para operações geométricas
+import numpy as np  # para lidar com as matrizes
+
+
+height = 20*4
+width = 30*4
+
+class perspectivAndTransformations:
+
+    def __init__(self):
+        self.stack_transform = [np.identity(4)]
+        self.P = np.identity(4)
+        self.lookAt = np.identity(4)
+
+    def pushStack(self, matrix):
+        self.stack_transform.append(matrix)
+
+    def actualTransformation(self):
+        self.stack_transform.pop()
+
+    def definelookAt(self, orientation, position):
+        temp = np.identity(4)
+        if orientation[0] != 0:
+            temp[1, 1] = cos(orientation[3])
+            temp[2, 1] = sin(orientation[3])
+            temp[1, 2] = -sin(orientation[3])
+            temp[2, 2] = cos(orientation[3])
+        if orientation[1] != 0:
+            temp[0, 0] = cos(orientation[3])
+            temp[0, 2] = sin(orientation[3])
+            temp[2, 0] = -sin(orientation[3])
+            temp[2, 2] = cos(orientation[3])
+        if orientation[2] != 0:
+            temp[0, 0] = cos(orientation[3])
+            temp[1, 0] = sin(orientation[3])
+            temp[0, 1] = -sin(orientation[3])
+            temp[1, 1] = cos(orientation[3])
+
+        temp2 = np.identity(4)
+        temp2[0, 3] = -position[0]
+        temp2[1, 3] = -position[1]
+        temp2[2, 3] = -position[2]
+
+        self.lookAt = temp.dot(temp2)
+
+    def defineP(self, aspect, near, far, top, bottom, right, left):
+        tempP = np.zeros((4, 4))
+        tempP[0, 0] = 2*near/(right-left)
+        tempP[1, 1] = 2*near/(top-bottom)
+        tempP[2, 2] = -(far+near)/(far-near)
+        tempP[2, 3] = -2*far*near/(far-near)
+        tempP[3, 2] = -1
+        tempP[0, 2] = (right+left)/(right-left)
+        tempP[1, 2] = (top+bottom)/(top-bottom)
+        self.P = tempP
+
+    def translTransform(self, bx, by, bz):
+        tempT = np.identity(4)
+        tempT[0, 3] = bx
+        tempT[1, 3] = by
+        tempT[2, 3] = bz
+        return tempT
+    
+    def scaleTransform(self, sx, sy, sz):
+        tempS = np.identity(4)
+        tempS[0, 0] = sx
+        tempS[1, 1] = sy
+        tempS[2, 2] = sz
+        return tempS
+
+    def rotationTransform(self, x, y, z, teta):
+        tempR = np.identity(4)
+        if x:    
+            tempR[1, 1] = cos(teta)
+            tempR[1, 2] = -sin(teta)
+            tempR[2, 1] = sin(teta)
+            tempR[2, 2] = cos(teta)
+        if y:    
+            tempR[0, 0] = cos(teta)
+            tempR[0, 2] = sin(teta)
+            tempR[2, 0] = -sin(teta)
+            tempR[2, 2] = cos(teta)
+        if z:    
+            tempR[0, 0] = cos(teta)
+            tempR[0, 1] = -sin(teta)
+            tempR[1, 0] = sin(teta)
+            tempR[1, 1] = cos(teta)
+        return tempR
+
+def screen_view(width, height):
+    screen = np.zeros((4, 4))
+    screen[0, 0] = width/2
+    screen[1, 1] = -height/2
+    screen[0, 3] = width/2
+    screen[1, 3] = height/2
+    return screen
+
+
+pAndT = perspectivAndTransformations()
 
 def line_equation(P1, P2):
     A = P1[1] - P2[1]
@@ -54,25 +152,22 @@ def polypoint2D(point, color):
     for i in range(0,len(point),2):
         diffx = ((point[i] - int(point[i])))
         diffy = ((point[i + 1] - int(point[i + 1])))
-        x = int(point[i]) if (((diffx < 0.8) and (diffx > 0.2)) or (int(point[i]) + 1) < 29) else int(point[i]) + 1
-        y = int(point[i + 1]) if (((diffy < 0.8) and (diffy > 0.2)) or ((int(point[i + 1]) + 1) < 19)) else int(point[i + 1]) + 1
+        x = int(point[i]) if (((diffx < 0.8) and (diffx > 0.2)) or (int(point[i]) + 1) < (width-1)) else int(point[i]) + 1
+        y = int(point[i + 1]) if (((diffy < 0.8) and (diffy > 0.2)) or ((int(point[i + 1]) + 1) < (height-1))) else int(point[i + 1]) + 1
         gpu.GPU.set_pixel(x, y, r, g, b)
         if (diffx <= 0.3) and ((x - 1) >= 0):
             gpu.GPU.set_pixel(int(point[i]) - 1, y, r*(0.5-diffx), g*(0.5-diffx), b*(0.5-diffx))
         if (diffy <= 0.3) and ((y - 1) >= 0):
             gpu.GPU.set_pixel(x, int(point[i + 1]) - 1, r*(0.5-diffy), g*(0.5-diffy), b*(0.5-diffy))
-        if (diffx >= 0.8) and ((x + 1) <= 29):
+        if (diffx >= 0.8) and ((x + 1) <= (width-1)):
             gpu.GPU.set_pixel(int(point[i]) + 1, y, r*(0.5-diffx), g*(0.5-diffx), b*(0.5-diffx))
-        if (diffy >= 0.8) and ((y + 1) <= 19):
+        if (diffy >= 0.8) and ((y + 1) <= (height-1)):
             gpu.GPU.set_pixel(x, int(point[i + 1]) + 1, r*(0.5-diffy), g*(0.5-diffy), b*(0.5-diffy))
         if ((diffx <= 0.3) and ((x - 1) >= 0)) and ((diffy <= 0.3) and ((y - 1) >= 0)):
             gpu.GPU.set_pixel(int(point[i]) - 1, int(point[i + 1]) - 1, r*(0.5-diffx), g*(0.5-diffx), b*(0.5-diffx))
-        if ((diffy >= 0.8) and ((y + 1) <= 19)) and ((diffx >= 0.8) and ((x + 1) <= 29)):
+        if ((diffy >= 0.8) and ((y + 1) <= (height-1))) and ((diffx >= 0.8) and ((x + 1) <= (width-1))):
             gpu.GPU.set_pixel(int(point[i]) + 1, int(point[i + 1]) + 1, r*(0.5-diffy), g*(0.5-diffy), b*(0.5-diffy))
-        
-    """ Função usada para renderizar Polypoint2D. """
-    # gpu.GPU.set_pixel(3, 1, 255, 0, 0) # altera um pixel da imagem
-    # cuidado com as cores, o X3D especifica de (0,1) e o Framebuffer de (0,255)
+
 
 def polyline2D(lineSegments, color):
     """ Função usada para renderizar Polyline2D. """
@@ -131,8 +226,8 @@ def triangleSet2D(vertices, color):
     line1 = line_equation((vertices[0], vertices[1]), (vertices[2], vertices[3]))
     line2 = line_equation((vertices[2], vertices[3]),(vertices[4], vertices[5]))
     line3 = line_equation((vertices[4], vertices[5]), (vertices[0], vertices[1]))
-    for i in range(30):
-        for j in range(20):
+    for i in range(width):
+        for j in range(height):
             per_inside = calculate_all_L(line1, line2, line3, i, j)
             r_p = int(r*per_inside)
             g_p = int(g*per_inside)
@@ -142,128 +237,89 @@ def triangleSet2D(vertices, color):
 
 
 def triangleSet(point, color):
-    """ Função usada para renderizar TriangleSet. """
-    # Nessa função você receberá pontos no parâmetro point, esses pontos são uma lista
-    # de pontos x, y, e z sempre na ordem. Assim point[0] é o valor da coordenada x do
-    # primeiro ponto, point[1] o valor y do primeiro ponto, point[2] o valor z da 
-    # coordenada z do primeiro ponto. Já point[3] é a coordenada x do segundo ponto e
-    # assim por diante.
-    # No TriangleSet os triângulos são informados individualmente, assim os três
-    # primeiros pontos definem um triângulo, os três próximos pontos definem um novo
-    # triângulo, e assim por diante.
-    
-    # O print abaixo é só para vocês verificarem o funcionamento, deve ser removido.
-    print("TriangleSet : pontos = {0}".format(point)) # imprime no terminal pontos
-    r = int(255*color[0])
-    g = int(255*color[1])
-    b = int(255*color[2])
-    for i in range(0,len(point),3):
-        gpu.GPU.set_pixel(int(point[i]) + 1, int(point[i + 1]) + 1, r, g, b)
-stack_transform = []
-def viewpoint(position, orientation, fieldOfView):
-    """ Função usada para renderizar (na verdade coletar os dados) de Viewpoint. """
-    # Na função de viewpoint você receberá a posição, orientação e campo de visão da
-    # câmera virtual. Use esses dados para poder calcular e criar a matriz de projeção
-    # perspectiva para poder aplicar nos pontos dos objetos geométricos.
+    mat_width = int(len(point)/3)
+    points = np.append(np.reshape(point, (mat_width, 3)).transpose(), np.ones((1, mat_width)), axis=0)
+    points = pAndT.stack_transform[-1].dot(points)
+    points = pAndT.lookAt.dot(points)
+    points = pAndT.P.dot(points)
+    for i in range(len(points[0])):
+        points[:,i] /= points[-1,i]
+    screen = screen_view(width, height)
+    points = screen.dot(points)
+    points = points[:2].transpose().reshape(mat_width*2)
+    for i in range(0, len(points), 6):
 
-    # O print abaixo é só para vocês verificarem o funcionamento, deve ser removido.
-    print("Viewpoint : position = {0}, orientation = {1}, fieldOfView = {2}".format(position, orientation, fieldOfView)) # imprime no terminal
+        triangleSet2D(points[i:i+6], color)
+
+
+def viewpoint(position, orientation, fieldOfView):
+    aspect = width/height
+    near = 0.5
+    far = 100
+    top = near * tan(fieldOfView)
+    bottom = -top
+    right = top * aspect
+    left = - right
+    pAndT.defineP(aspect, near, far, top, bottom, right, left)
+    pAndT.definelookAt(orientation, position)
 
 def transform(translation, scale, rotation):
-    """ Função usada para renderizar (na verdade coletar os dados) de Transform. """
-    # A função transform será chamada quando se entrar em um nó X3D do tipo Transform
-    # do grafo de cena. Os valores passados são a escala em um vetor [x, y, z]
-    # indicando a escala em cada direção, a translação [x, y, z] nas respectivas
-    # coordenadas e finalmente a rotação por [x, y, z, t] sendo definida pela rotação
-    # do objeto ao redor do eixo x, y, z por t radianos, seguindo a regra da mão direita.
-    # Quando se entrar em um nó transform se deverá salvar a matriz de transformação dos
-    # modelos do mundo em alguma estrutura de pilha.
+    trans = pAndT.stack_transform[-1]
 
-    # O print abaixo é só para vocês verificarem o funcionamento, deve ser removido.
-    print("Transform : ", end = '')
     if translation:
-        stack_transform.append([[0, 0, 0, translation[0]],[0, 0, 0, translation[1]],[0, 0, 0, translation[2]], [0, 0, 0, 1]])
-        print("translation = {0} ".format(translation), end = '') # imprime no terminal
+        trans = pAndT.translTransform(translation[0], translation[1], translation[2]).dot(trans)
     if scale:
-        stack_transform.append([[scale[0], 0, 0, 0],[0, scale[1], 0, 0],[0, 0, scale[2], 0], [0, 0, 0, 1]])
-        print("scale = {0} ".format(scale), end = '') # imprime no terminal
+        trans = pAndT.scaleTransform(scale[0], scale[1], scale[2]).dot(trans)
     if rotation:
-        if rotation[0]:
-            stack_transform.append([[1, 0, 0, 0], [0, cos(rotation[3]), -sin(rotation[3]), 0], [0, sin(rotation[3]), cos(rotation[3]), 0], [0, 0, 0, 1]])
-        elif rotation[1]:
-            stack_transform.append([[cos(rotation[3]), 0, sin(rotation[3]), 0], [0, 1, 0, 0], [-sin(rotation[3]), 0, cos(rotation[3]), 0], [0, 0, 0, 1]])
-        elif rotation[2]:
-            stack_transform.append([[cos(rotation[3]), 0, -sin(rotation[3]), 0], [sin(rotation[3]), cos(rotation[3]), 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]])
-        
-        print("rotation = {0} ".format(rotation), end = '') # imprime no terminal
-    print("")
+        trans = pAndT.rotationTransform(rotation[0], rotation[1], rotation[2], rotation[3]).dot(trans)
+    pAndT.pushStack(trans)
 
 def _transform():
-    """ Função usada para renderizar (na verdade coletar os dados) de Transform. """
-    # A função _transform será chamada quando se sair em um nó X3D do tipo Transform do
-    # grafo de cena. Não são passados valores, porém quando se sai de um nó transform se
-    # deverá recuperar a matriz de transformação dos modelos do mundo da estrutura de
-    # pilha implementada.
-    trans = stack_transform.pop()
-
-
-    # O print abaixo é só para vocês verificarem o funcionamento, deve ser removido.
-    print("Saindo de Transform")
+    pAndT.actualTransformation()
 
 def triangleStripSet(point, stripCount, color):
-    """ Função usada para renderizar TriangleStripSet. """
-    # A função triangleStripSet é usada para desenhar tiras de triângulos interconectados,
-    # você receberá as coordenadas dos pontos no parâmetro point, esses pontos são uma
-    # lista de pontos x, y, e z sempre na ordem. Assim point[0] é o valor da coordenada x
-    # do primeiro ponto, point[1] o valor y do primeiro ponto, point[2] o valor z da
-    # coordenada z do primeiro ponto. Já point[3] é a coordenada x do segundo ponto e assim
-    # por diante. No TriangleStripSet a quantidade de vértices a serem usados é informado
-    # em uma lista chamada stripCount (perceba que é uma lista).
-
-    # O print abaixo é só para vocês verificarem o funcionamento, deve ser removido.
-    print("TriangleStripSet : pontos = {0} ".format(point), end = '') # imprime no terminal pontos
-    for i, strip in enumerate(stripCount):
-        print("strip[{0}] = {1} ".format(i, strip), end = '') # imprime no terminal
-    print("")
+    for i in range(int(stripCount[0]) - 2):
+        pos = i*3
+        if i % 2 == 0:
+            triangleSet([point[pos], point[pos + 1], point[pos + 2], point[pos + 3], point[pos + 4], point[pos + 5], point[pos + 6], point[pos + 7], point[pos + 8]], color)
+        else:
+            triangleSet([point[pos + 3], point[pos + 4], point[pos + 5], point[pos], point[pos + 1], point[pos + 2], point[pos + 6], point[pos + 7], point[pos + 8]], color)
 
 def indexedTriangleStripSet(point, index, color):
-    """ Função usada para renderizar IndexedTriangleStripSet. """
-    # A função indexedTriangleStripSet é usada para desenhar tiras de triângulos
-    # interconectados, você receberá as coordenadas dos pontos no parâmetro point, esses
-    # pontos são uma lista de pontos x, y, e z sempre na ordem. Assim point[0] é o valor
-    # da coordenada x do primeiro ponto, point[1] o valor y do primeiro ponto, point[2]
-    # o valor z da coordenada z do primeiro ponto. Já point[3] é a coordenada x do
-    # segundo ponto e assim por diante. No IndexedTriangleStripSet uma lista informando
-    # como conectar os vértices é informada em index, o valor -1 indica que a lista
-    # acabou. A ordem de conexão será de 3 em 3 pulando um índice. Por exemplo: o
-    # primeiro triângulo será com os vértices 0, 1 e 2, depois serão os vértices 1, 2 e 3,
-    # depois 2, 3 e 4, e assim por diante.
-    
-    # O print abaixo é só para vocês verificarem o funcionamento, deve ser removido.
-    print("IndexedTriangleStripSet : pontos = {0}, index = {1}".format(point, index)) # imprime no terminal pontos
+
+    for i in range(len(index) - 3):
+        pos1 = int(index[i]*3)
+        pos2 = int(index[i + 1]*3)
+        pos3 = int(index[i + 2]*3)
+        if i % 2 == 0:
+            triangleSet([point[pos1], point[pos1 + 1], point[pos1 + 2], point[pos2], point[pos2 + 1], point[pos2 + 2], point[pos3], point[pos3 + 1], point[pos3 + 2]], color)
+        else:
+            triangleSet([point[pos2], point[pos2 + 1], point[pos2 + 2], point[pos1], point[pos1 + 1], point[pos1 + 2], point[pos3], point[pos3 + 1], point[pos3 + 2]], color)
+
+
 
 def box(size, color):
-    """ Função usada para renderizar Boxes. """
-    # A função box é usada para desenhar paralelepípedos na cena. O Box é centrada no
-    # (0, 0, 0) no sistema de coordenadas local e alinhado com os eixos de coordenadas
-    # locais. O argumento size especifica as extensões da caixa ao longo dos eixos X, Y
-    # e Z, respectivamente, e cada valor do tamanho deve ser maior que zero. Para desenha
-    # essa caixa você vai provavelmente querer tesselar ela em triângulos, para isso
-    # encontre os vértices e defina os triângulos.
+    x = size[0]/2
+    y = size[1]/2
+    z = size[2]/2
 
-    # O print abaixo é só para vocês verificarem o funcionamento, deve ser removido.
-    print("Box : size = {0}".format(size)) # imprime no terminal pontos
+    side = [-x, -y, -z, -x, -y, z, -x, y, -z, -x, y, z, x, y, -z, x, y, z, x, -y, -z, x, -y, z]
+    back = [-x, -y, -z, -x, y, -z, x, -y, -z, x, y, -z]
+    front = [-x, -y, z, x, -y, z, -x, y, z, x, y, z]
+    triangleStripSet(side, [8], color)
+    triangleStripSet(back, [4], color)
+    triangleStripSet(front, [4], color)
 
 
-LARGURA = 30
-ALTURA = 20
+# LARGURA = 30*4
+# ALTURA = 20*4
 
 if __name__ == '__main__':
 
     # Valores padrão da aplicação
-    width = LARGURA
-    height = ALTURA
-    x3d_file = "exemplo4.x3d"
+    # width = LARGURA
+    # height = ALTURA
+    x3d_file = "exemplo6.x3d"
     image_file = "tela.png"
 
     # Tratando entrada de parâmetro
