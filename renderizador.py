@@ -13,7 +13,7 @@ import numpy as np  # para lidar com as matrizes
 height = 20*4
 width = 30*4
 
-class perspectivAndTransformations:
+class perspectiveAndTransformations:
 
     def __init__(self):
         self.stack_transform = [np.identity(4)]
@@ -104,7 +104,7 @@ def screen_view(width, height):
     return screen
 
 
-pAndT = perspectivAndTransformations()
+pAndT = perspectiveAndTransformations()
 
 def line_equation(P1, P2):
     A = P1[1] - P2[1]
