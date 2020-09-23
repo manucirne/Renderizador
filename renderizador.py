@@ -49,7 +49,7 @@ class perspectivAndTransformations:
         temp2[1, 3] = -position[1]
         temp2[2, 3] = -position[2]
 
-        self.lookAt = temp.dot(temp2)
+        self.lookAt = np.matmul(temp, temp2)
 
     def defineP(self, aspect, near, far, top, bottom, right, left):
         tempP = np.zeros((4, 4))
@@ -239,13 +239,13 @@ def triangleSet2D(vertices, color):
 def triangleSet(point, color):
     mat_width = int(len(point)/3)
     points = np.append(np.reshape(point, (mat_width, 3)).transpose(), np.ones((1, mat_width)), axis=0)
-    points = pAndT.stack_transform[-1].dot(points)
-    points = pAndT.lookAt.dot(points)
-    points = pAndT.P.dot(points)
+    points = np.matmul(pAndT.stack_transform[-1], points)
+    points = np.matmul(pAndT.lookAt, points)
+    points = np.matmul(pAndT.P, points)
     for i in range(len(points[0])):
         points[:,i] /= points[-1,i]
     screen = screen_view(width, height)
-    points = screen.dot(points)
+    points = np.matmul(screen, points)
     points = points[:2].transpose().reshape(mat_width*2)
     for i in range(0, len(points), 6):
 
@@ -267,11 +267,11 @@ def transform(translation, scale, rotation):
     trans = pAndT.stack_transform[-1]
 
     if translation:
-        trans = pAndT.translTransform(translation[0], translation[1], translation[2]).dot(trans)
+        trans = np.matmul(pAndT.translTransform(translation[0], translation[1], translation[2]), trans)
     if scale:
-        trans = pAndT.scaleTransform(scale[0], scale[1], scale[2]).dot(trans)
+        trans = np.matmul(pAndT.scaleTransform(scale[0], scale[1], scale[2]), trans)
     if rotation:
-        trans = pAndT.rotationTransform(rotation[0], rotation[1], rotation[2], rotation[3]).dot(trans)
+        trans = np.matmul(pAndT.rotationTransform(rotation[0], rotation[1], rotation[2], rotation[3]), trans)
     pAndT.pushStack(trans)
 
 def _transform():
