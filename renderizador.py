@@ -170,7 +170,6 @@ def polypoint2D(point, color):
 
 
 def polyline2D(lineSegments, color):
-    """ Função usada para renderizar Polyline2D. """
     # referência http://floppsie.comp.glam.ac.uk/Southwales/gaius/gametools/6.html
     r = int(255*color[0])
     g = int(255*color[1])
@@ -219,7 +218,6 @@ def polyline2D(lineSegments, color):
             prevy0 = y0
 
 def triangleSet2D(vertices, color, antialiasing = True):
-    """ Função usada para renderizar TriangleSet2D. """
     r = int(255*color[0])
     g = int(255*color[1])
     b = int(255*color[2])
