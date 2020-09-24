@@ -9,10 +9,6 @@ import gpu          # Simula os recursos de uma GPU
 from math import *  # para operações geométricas
 import numpy as np  # para lidar com as matrizes
 
-
-height = 200
-width = 300
-
 class perspectiveAndTransformations:
 
     def __init__(self):
@@ -311,8 +307,7 @@ def box(size, color):
     triangleStripSet(back, [4], color, True)
     triangleStripSet(front, [4], color, True)
 
-# LARGURA = 30*4
-# ALTURA = 20*4
+
 def indexedFaceSet(coord, coordIndex, colorPerVertex, color, colorIndex, texCoord, texCoordIndex, current_color, current_texture):
     """ Função usada para renderizar IndexedFaceSet. """
     # A função indexedFaceSet é usada para desenhar malhas de triângulos. Ela funciona de
@@ -347,14 +342,14 @@ def indexedFaceSet(coord, coordIndex, colorPerVertex, color, colorIndex, texCoor
         print("\t Matriz com image = {0}".format(image))
 
 # Defina o tamanhã da tela que melhor sirva para perceber a renderização
-LARGURA = 30
-ALTURA = 20
+height = 200
+width = 300
 
 if __name__ == '__main__':
 
     # Valores padrão da aplicação
-    width = LARGURA
-    height = ALTURA
+    # width = LARGURA
+    # height = ALTURA
     x3d_file = "exemplo9.x3d"
     image_file = "tela.png"
 
