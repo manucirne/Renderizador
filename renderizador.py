@@ -311,7 +311,6 @@ def box(size, color):
     triangleStripSet(back, [4], color, True)
     triangleStripSet(front, [4], color, True)
 
-
 # LARGURA = 30*4
 # ALTURA = 20*4
 
