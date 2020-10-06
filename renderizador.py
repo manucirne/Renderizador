@@ -9,12 +9,18 @@ import gpu          # Simula os recursos de uma GPU
 from math import *  # para operações geométricas
 import numpy as np  # para lidar com as matrizes
 
+# Defina o tamanhã da tela que melhor sirva para perceber a renderização
+height = 21
+width = 31
+
 class perspectiveAndTransformations:
 
-    def __init__(self):
+    def __init__(self, width, height):
         self.stack_transform = [np.identity(4)]
-        self.P = np.identity(4)
+        self.modelView = np.identity(4)
         self.lookAt = np.identity(4)
+        self.P = np.identity(4)
+        self.screen_view = screen_view(width, height)
 
     def pushStack(self, matrix):
         self.stack_transform.append(matrix)
@@ -57,6 +63,9 @@ class perspectiveAndTransformations:
         tempP[0, 2] = (right+left)/(right-left)
         tempP[1, 2] = (top+bottom)/(top-bottom)
         self.P = tempP
+    
+    def defineModelView(self):
+        self.modelView = np.matmul(self.P, self.lookAt)
 
     def translTransform(self, bx, by, bz):
         tempT = np.identity(4)
@@ -100,7 +109,7 @@ def screen_view(width, height):
     return screen
 
 
-pAndT = perspectiveAndTransformations()
+pAndT = perspectiveAndTransformations(width, height)
 
 def line_equation(P1, P2):
     A = P1[1] - P2[1]
@@ -151,18 +160,18 @@ def polypoint2D(point, color):
         x = int(point[i]) if (((diffx < 0.8) and (diffx > 0.2)) or (int(point[i]) + 1) < (width-1)) else int(point[i]) + 1
         y = int(point[i + 1]) if (((diffy < 0.8) and (diffy > 0.2)) or ((int(point[i + 1]) + 1) < (height-1))) else int(point[i + 1]) + 1
         gpu.GPU.set_pixel(x, y, r, g, b)
-        if (diffx <= 0.3) and ((x - 1) >= 0):
-            gpu.GPU.set_pixel(int(point[i]) - 1, y, r*(0.5-diffx), g*(0.5-diffx), b*(0.5-diffx))
-        if (diffy <= 0.3) and ((y - 1) >= 0):
-            gpu.GPU.set_pixel(x, int(point[i + 1]) - 1, r*(0.5-diffy), g*(0.5-diffy), b*(0.5-diffy))
-        if (diffx >= 0.8) and ((x + 1) <= (width-1)):
-            gpu.GPU.set_pixel(int(point[i]) + 1, y, r*(0.5-diffx), g*(0.5-diffx), b*(0.5-diffx))
-        if (diffy >= 0.8) and ((y + 1) <= (height-1)):
-            gpu.GPU.set_pixel(x, int(point[i + 1]) + 1, r*(0.5-diffy), g*(0.5-diffy), b*(0.5-diffy))
-        if ((diffx <= 0.3) and ((x - 1) >= 0)) and ((diffy <= 0.3) and ((y - 1) >= 0)):
-            gpu.GPU.set_pixel(int(point[i]) - 1, int(point[i + 1]) - 1, r*(0.5-diffx), g*(0.5-diffx), b*(0.5-diffx))
-        if ((diffy >= 0.8) and ((y + 1) <= (height-1))) and ((diffx >= 0.8) and ((x + 1) <= (width-1))):
-            gpu.GPU.set_pixel(int(point[i]) + 1, int(point[i + 1]) + 1, r*(0.5-diffy), g*(0.5-diffy), b*(0.5-diffy))
+        # if (diffx <= 0.3) and ((x - 1) >= 0):
+        #     gpu.GPU.set_pixel(int(point[i]) - 1, y, r*(0.5-diffx), g*(0.5-diffx), b*(0.5-diffx))
+        # if (diffy <= 0.3) and ((y - 1) >= 0):
+        #     gpu.GPU.set_pixel(x, int(point[i + 1]) - 1, r*(0.5-diffy), g*(0.5-diffy), b*(0.5-diffy))
+        # if (diffx >= 0.8) and ((x + 1) <= (width-1)):
+        #     gpu.GPU.set_pixel(int(point[i]) + 1, y, r*(0.5-diffx), g*(0.5-diffx), b*(0.5-diffx))
+        # if (diffy >= 0.8) and ((y + 1) <= (height-1)):
+        #     gpu.GPU.set_pixel(x, int(point[i + 1]) + 1, r*(0.5-diffy), g*(0.5-diffy), b*(0.5-diffy))
+        # if ((diffx <= 0.3) and ((x - 1) >= 0)) and ((diffy <= 0.3) and ((y - 1) >= 0)):
+        #     gpu.GPU.set_pixel(int(point[i]) - 1, int(point[i + 1]) - 1, r*(0.5-diffx), g*(0.5-diffx), b*(0.5-diffx))
+        # if ((diffy >= 0.8) and ((y + 1) <= (height-1))) and ((diffx >= 0.8) and ((x + 1) <= (width-1))):
+        #     gpu.GPU.set_pixel(int(point[i]) + 1, int(point[i + 1]) + 1, r*(0.5-diffy), g*(0.5-diffy), b*(0.5-diffy))
 
 
 def polyline2D(lineSegments, color):
@@ -213,15 +222,24 @@ def polyline2D(lineSegments, color):
             prevx0 = x0
             prevy0 = y0
 
-def triangleSet2D(vertices, color, antialiasing = True):
-    r = int(255*color[0])
-    g = int(255*color[1])
-    b = int(255*color[2])
+def triangleSet2D(vertices, color, antialiasing = True, colorPerVertex = False):
+    if not colorPerVertex:
+        r = int(255*color[0])
+        g = int(255*color[1])
+        b = int(255*color[2])
     line1 = line_equation((vertices[0], vertices[1]), (vertices[2], vertices[3]))
     line2 = line_equation((vertices[2], vertices[3]),(vertices[4], vertices[5]))
     line3 = line_equation((vertices[4], vertices[5]), (vertices[0], vertices[1]))
     for i in range(width):
         for j in range(height):
+            if colorPerVertex:
+                if ((i, j) in color):
+                    print(i, j)
+                    r = int(255*color[(i, j)][0])
+                    g = int(255*color[(i, j)][1])
+                    b = int(255*color[(i, j)][2])
+                else:
+                    r, g, b = [0, 0, 0]
             per_inside = calculate_all_L(line1, line2, line3, i, j)
             if (antialiasing):
                 r_p = int(r*per_inside)
@@ -233,19 +251,17 @@ def triangleSet2D(vertices, color, antialiasing = True):
                 if per_inside>0:
                     gpu.GPU.set_pixel(i, j, r, g, b) # altera um pixel da imagem
 
-def triangleSet(point, color, antializasing = True):
+def triangleSet(point, color, antializasing = True, colorPerVertex = False):
     mat_width = int(len(point)/3)
     points = np.append(np.reshape(point, (mat_width, 3)).transpose(), np.ones((1, mat_width)), axis=0)
     points = np.matmul(pAndT.stack_transform[-1], points)
-    points = np.matmul(pAndT.lookAt, points)
-    points = np.matmul(pAndT.P, points)
+    points = np.matmul(pAndT.modelView, points)
     for i in range(len(points[0])):
         points[:,i] /= points[-1,i]
-    screen = screen_view(width, height)
-    points = np.matmul(screen, points)
+    points = np.matmul(pAndT.screen_view, points)
     points = points[:2].transpose().reshape(mat_width*2)
     for i in range(0, len(points), 6):
-        triangleSet2D(points[i:i+6], color, antializasing)
+        triangleSet2D(points[i:i+6], color, antializasing, colorPerVertex)
 
 
 def viewpoint(position, orientation, fieldOfView):
@@ -258,6 +274,7 @@ def viewpoint(position, orientation, fieldOfView):
     left = - right
     pAndT.defineP(aspect, near, far, top, bottom, right, left)
     pAndT.definelookAt(orientation, position)
+    pAndT.defineModelView()
 
 def transform(translation, scale, rotation):
     trans = pAndT.stack_transform[-1]
@@ -273,7 +290,7 @@ def transform(translation, scale, rotation):
 def _transform():
     pAndT.actualTransformation()
 
-def triangleStripSet(point, stripCount, color, antialiasing = False):
+def triangleStripSet(point, stripCount, color, antialiasing = False, colorPerVertex = False):
     for i in range(int(stripCount[0]) - 2):
         pos = i*3
         if i % 2 == 0:
@@ -281,28 +298,16 @@ def triangleStripSet(point, stripCount, color, antialiasing = False):
         else:
             triangleSet([point[pos + 3], point[pos + 4], point[pos + 5], point[pos], point[pos + 1], point[pos + 2], point[pos + 6], point[pos + 7], point[pos + 8]], color, antialiasing)
 
-def indexedTriangleStripSet(point, index, color, antialiasing = False):
-    i = 0
-    print(index)
-    while i < (len(index) - 3):
-        while (index[i] != -1 and index[i + 1] != -1 and index[i + 2] != -1) and i < (len(index) - 3):
+def indexedTriangleStripSet(point, index, color, antialiasing = False, colorPerVertex = False):
+    for i in range(len(index) - 3):
+        if((index[i] != -1 and index[i + 1] != -1 and index[i + 2] != -1)):
             pos1 = int(index[i]*3)
             pos2 = int(index[i + 1]*3)
             pos3 = int(index[i + 2]*3)
             if i % 2 == 0:
-                triangleSet([point[pos1], point[pos1 + 1], point[pos1 + 2], point[pos2], point[pos2 + 1], point[pos2 + 2], point[pos3], point[pos3 + 1], point[pos3 + 2]], color, antialiasing)
+                triangleSet([point[pos1], point[pos1 + 1], point[pos1 + 2], point[pos2], point[pos2 + 1], point[pos2 + 2], point[pos3], point[pos3 + 1], point[pos3 + 2]], color, antialiasing, colorPerVertex)
             else:
-                triangleSet([point[pos2], point[pos2 + 1], point[pos2 + 2], point[pos1], point[pos1 + 1], point[pos1 + 2], point[pos3], point[pos3 + 1], point[pos3 + 2]], color, antialiasing)
-            i += 1
-        i += 1
-    # for i in range(len(index) - 3):
-    #     pos1 = int(index[i]*3)
-    #     pos2 = int(index[i + 1]*3)
-    #     pos3 = int(index[i + 2]*3)
-    #     if i % 2 == 0:
-    #         triangleSet([point[pos1], point[pos1 + 1], point[pos1 + 2], point[pos2], point[pos2 + 1], point[pos2 + 2], point[pos3], point[pos3 + 1], point[pos3 + 2]], color, antialiasing)
-    #     else:
-    #         triangleSet([point[pos2], point[pos2 + 1], point[pos2 + 2], point[pos1], point[pos1 + 1], point[pos1 + 2], point[pos3], point[pos3 + 1], point[pos3 + 2]], color, antialiasing)
+                triangleSet([point[pos2], point[pos2 + 1], point[pos2 + 2], point[pos1], point[pos1 + 1], point[pos1 + 2], point[pos3], point[pos3 + 1], point[pos3 + 2]], color, antialiasing, colorPerVertex)
 
 
 
@@ -317,6 +322,9 @@ def box(size, color):
     triangleStripSet(side, [8], color, True)
     triangleStripSet(back, [4], color, True)
     triangleStripSet(front, [4], color, True)
+
+def colorEachPoint(coord, coordIndex, color, colorIndex):
+    return { (15, 10): [0.8, 0, 0] }
 
 
 def indexedFaceSet(coord, coordIndex, colorPerVertex, color, colorIndex, texCoord, texCoordIndex, current_color, current_texture):
@@ -340,7 +348,13 @@ def indexedFaceSet(coord, coordIndex, colorPerVertex, color, colorIndex, texCoor
     # cor da textura conforme a posição do mapeamento. Dentro da classe GPU já está
     # implementadado um método para a leitura de imagens.
     # interpolação baricêntrica
-    indexedTriangleStripSet(coord, coordIndex, [1.0, 0.0, 0.0], False)
+    if not colorPerVertex and not current_texture:
+        indexedTriangleStripSet(coord, coordIndex, current_color, False)
+    elif colorPerVertex:
+        colorDict = colorEachPoint(coord, coordIndex, color, colorIndex)
+        indexedTriangleStripSet(coord, coordIndex, colorDict, False, True)
+
+    
     # O print abaixo é só para vocês verificarem o funcionamento, deve ser removido.
     print("IndexedFaceSet : ")
     # if coord:
@@ -353,16 +367,12 @@ def indexedFaceSet(coord, coordIndex, colorPerVertex, color, colorIndex, texCoor
     #     image = gpu.GPU.load_texture(current_texture[0])
     #     print("\t Matriz com image = {0}".format(image))
 
-# Defina o tamanhã da tela que melhor sirva para perceber a renderização
-height = 200
-width = 300
-
 if __name__ == '__main__':
 
     # Valores padrão da aplicação
     # width = LARGURA
     # height = ALTURA
-    x3d_file = "exemplo9.x3d"
+    x3d_file = "exemplo8.x3d"
     image_file = "tela.png"
 
     # Tratando entrada de parâmetro
