@@ -245,7 +245,6 @@ def triangleSet(point, color, antializasing = True):
     points = np.matmul(screen, points)
     points = points[:2].transpose().reshape(mat_width*2)
     for i in range(0, len(points), 6):
-
         triangleSet2D(points[i:i+6], color, antializasing)
 
 
@@ -283,15 +282,27 @@ def triangleStripSet(point, stripCount, color, antialiasing = False):
             triangleSet([point[pos + 3], point[pos + 4], point[pos + 5], point[pos], point[pos + 1], point[pos + 2], point[pos + 6], point[pos + 7], point[pos + 8]], color, antialiasing)
 
 def indexedTriangleStripSet(point, index, color, antialiasing = False):
-
-    for i in range(len(index) - 3):
-        pos1 = int(index[i]*3)
-        pos2 = int(index[i + 1]*3)
-        pos3 = int(index[i + 2]*3)
-        if i % 2 == 0:
-            triangleSet([point[pos1], point[pos1 + 1], point[pos1 + 2], point[pos2], point[pos2 + 1], point[pos2 + 2], point[pos3], point[pos3 + 1], point[pos3 + 2]], color, antialiasing)
-        else:
-            triangleSet([point[pos2], point[pos2 + 1], point[pos2 + 2], point[pos1], point[pos1 + 1], point[pos1 + 2], point[pos3], point[pos3 + 1], point[pos3 + 2]], color, antialiasing)
+    i = 0
+    print(index)
+    while i < (len(index) - 3):
+        while (index[i] != -1 and index[i + 1] != -1 and index[i + 2] != -1) and i < (len(index) - 3):
+            pos1 = int(index[i]*3)
+            pos2 = int(index[i + 1]*3)
+            pos3 = int(index[i + 2]*3)
+            if i % 2 == 0:
+                triangleSet([point[pos1], point[pos1 + 1], point[pos1 + 2], point[pos2], point[pos2 + 1], point[pos2 + 2], point[pos3], point[pos3 + 1], point[pos3 + 2]], color, antialiasing)
+            else:
+                triangleSet([point[pos2], point[pos2 + 1], point[pos2 + 2], point[pos1], point[pos1 + 1], point[pos1 + 2], point[pos3], point[pos3 + 1], point[pos3 + 2]], color, antialiasing)
+            i += 1
+        i += 1
+    # for i in range(len(index) - 3):
+    #     pos1 = int(index[i]*3)
+    #     pos2 = int(index[i + 1]*3)
+    #     pos3 = int(index[i + 2]*3)
+    #     if i % 2 == 0:
+    #         triangleSet([point[pos1], point[pos1 + 1], point[pos1 + 2], point[pos2], point[pos2 + 1], point[pos2 + 2], point[pos3], point[pos3 + 1], point[pos3 + 2]], color, antialiasing)
+    #     else:
+    #         triangleSet([point[pos2], point[pos2 + 1], point[pos2 + 2], point[pos1], point[pos1 + 1], point[pos1 + 2], point[pos3], point[pos3 + 1], point[pos3 + 2]], color, antialiasing)
 
 
 
@@ -328,18 +339,19 @@ def indexedFaceSet(coord, coordIndex, colorPerVertex, color, colorIndex, texCoor
     # textura para o poligono, para isso, use as coordenadas de textura e depois aplique a
     # cor da textura conforme a posição do mapeamento. Dentro da classe GPU já está
     # implementadado um método para a leitura de imagens.
-    
+    # interpolação baricêntrica
+    indexedTriangleStripSet(coord, coordIndex, [1.0, 0.0, 0.0], False)
     # O print abaixo é só para vocês verificarem o funcionamento, deve ser removido.
     print("IndexedFaceSet : ")
-    if coord:
-        print("\tpontos(x, y, z) = {0}, coordIndex = {1}".format(coord, coordIndex)) # imprime no terminal
+    # if coord:
+    #     print("\tpontos(x, y, z) = {0}, coordIndex = {1}".format(coord, coordIndex)) # imprime no terminal
     if colorPerVertex:
         print("\tcores(r, g, b) = {0}, colorIndex = {1}".format(color, colorIndex)) # imprime no terminal
-    if texCoord:
-        print("\tpontos(u, v) = {0}, texCoordIndex = {1}".format(texCoord, texCoordIndex)) # imprime no terminal
-    if(current_texture):
-        image = gpu.GPU.load_texture(current_texture[0])
-        print("\t Matriz com image = {0}".format(image))
+    # if texCoord:
+    #     print("\tpontos(u, v) = {0}, texCoordIndex = {1}".format(texCoord, texCoordIndex)) # imprime no terminal
+    # if(current_texture):
+    #     image = gpu.GPU.load_texture(current_texture[0])
+    #     print("\t Matriz com image = {0}".format(image))
 
 # Defina o tamanhã da tela que melhor sirva para perceber a renderização
 height = 200
