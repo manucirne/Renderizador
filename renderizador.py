@@ -306,17 +306,20 @@ def triangleStripSet(point, stripCount, color, antialiasing = False, colorPerVer
         else:
             triangleSet([point[pos + 3], point[pos + 4], point[pos + 5], point[pos], point[pos + 1], point[pos + 2], point[pos + 6], point[pos + 7], point[pos + 8]], color, antialiasing)
 
-def indexedTriangleStripSet(point, index, color, antialiasing = False, colorPerVertex = False):
+def indexedTriangleStripSet(point, index, color, colorIndex, antialiasing = False, colorPerVertex = False):
     for i in range(len(index) - 3):
         if((index[i] != -1 and index[i + 1] != -1 and index[i + 2] != -1)):
             pos1 = int(index[i]*3)
             pos2 = int(index[i + 1]*3)
             pos3 = int(index[i + 2]*3)
+            col_pos1 = int(colorIndex[i]*3)
+            col_pos2 = int(colorIndex[i+1]*3)
+            col_pos3 = int(colorIndex[i+2]*3)
             if i % 2 == 0:
-                temp = [color[pos1], color[pos1+1], color[pos1+2], color[pos2], color[pos2+1], color[pos2+2], color[pos3], color[pos3+1], color[pos3+2]]
+                temp = [color[col_pos1], color[col_pos1+1], color[col_pos1+2], color[col_pos2], color[col_pos2+1], color[col_pos2+2], color[col_pos3], color[col_pos3+1], color[col_pos3+2]]
                 triangleSet([point[pos1], point[pos1 + 1], point[pos1 + 2], point[pos2], point[pos2 + 1], point[pos2 + 2], point[pos3], point[pos3 + 1], point[pos3 + 2]], temp, antialiasing, colorPerVertex)
             else:
-                temp = [color[pos2], color[pos2+1], color[pos2+2], color[pos1], color[pos1+1], color[pos1+1], color[pos3], color[pos3+1], color[pos3+2]]
+                temp = [color[col_pos2], color[col_pos2+1], color[col_pos2+2], color[col_pos1], color[col_pos1+1], color[col_pos1+1], color[col_pos3], color[col_pos3+1], color[col_pos3+2]]
                 triangleSet([point[pos2], point[pos2 + 1], point[pos2 + 2], point[pos1], point[pos1 + 1], point[pos1 + 2], point[pos3], point[pos3 + 1], point[pos3 + 2]], temp, antialiasing, colorPerVertex)
 
 
@@ -356,9 +359,9 @@ def indexedFaceSet(coord, coordIndex, colorPerVertex, color, colorIndex, texCoor
     # implementadado um método para a leitura de imagens.
     # interpolação baricêntrica
     if not colorPerVertex and not current_texture:
-        indexedTriangleStripSet(coord, coordIndex, current_color, False)
+        indexedTriangleStripSet(coord, coordIndex, current_color, colorIndex, False)
     elif colorPerVertex:
-        indexedTriangleStripSet(coord, coordIndex, color, False, True)
+        indexedTriangleStripSet(coord, coordIndex, color, colorIndex, False, True)
 
     
     # O print abaixo é só para vocês verificarem o funcionamento, deve ser removido.
