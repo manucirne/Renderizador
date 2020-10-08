@@ -10,8 +10,8 @@ from math import *  # para operações geométricas
 import numpy as np  # para lidar com as matrizes
 
 # Defina o tamanhã da tela que melhor sirva para perceber a renderização
-height = 21
-width = 31
+height = 200
+width = 300
 
 class perspectiveAndTransformations:
 
@@ -110,6 +110,23 @@ def screen_view(width, height):
 
 
 pAndT = perspectiveAndTransformations(width, height)
+
+def destructureX(vertices):
+    return vertices[0], vertices[2], vertices[4]
+
+def destructureY(vertices):
+    return vertices[1], vertices[3], vertices[5]
+
+def calculate_color(x, y, vertices, color):
+    xa, xb, xc = destructureX(vertices)
+    ya, yb, yc = destructureY(vertices)
+    alpha = (-(x-xb)*(yc-yb) + (y-yb)*(xc-xb)) / (-(xa-xb)*(yc-yb) + (ya-yb)*(xc-xb))
+    beta = (-(x-xc)*(ya-yc) + (y-yc)*(xa-xc)) / (-(xb-xc)*(ya-yc) + (yb-yc)*(xa-xc))
+    gamma = 1 - alpha - beta
+    r = alpha*color[0] + beta*color[3] + gamma*color[6]
+    g = alpha*color[1] + beta*color[4] + gamma*color[7]
+    b = alpha*color[2] + beta*color[5] + gamma*color[8]
+    return 255*r, 255*g, 255*b
 
 def line_equation(P1, P2):
     A = P1[1] - P2[1]
@@ -232,24 +249,15 @@ def triangleSet2D(vertices, color, antialiasing = True, colorPerVertex = False):
     line3 = line_equation((vertices[4], vertices[5]), (vertices[0], vertices[1]))
     for i in range(width):
         for j in range(height):
-            if colorPerVertex:
-                if ((i, j) in color):
-                    print(i, j)
-                    r = int(255*color[(i, j)][0])
-                    g = int(255*color[(i, j)][1])
-                    b = int(255*color[(i, j)][2])
-                else:
-                    r, g, b = [0, 0, 0]
             per_inside = calculate_all_L(line1, line2, line3, i, j)
-            if (antialiasing):
-                r_p = int(r*per_inside)
-                g_p = int(g*per_inside)
-                b_p = int(b*per_inside)
-                if per_inside>0:
-                    gpu.GPU.set_pixel(i, j, r_p, g_p, b_p) # altera um pixel da imagem
-            else:
-                if per_inside>0:
-                    gpu.GPU.set_pixel(i, j, r, g, b) # altera um pixel da imagem
+            if per_inside>0:
+                if colorPerVertex:
+                    r, g, b = calculate_color(i, j, vertices, color)
+
+                r_p = int(r*per_inside) if antialiasing else r
+                g_p = int(g*per_inside) if antialiasing else g
+                b_p = int(b*per_inside) if antialiasing else b
+                gpu.GPU.set_pixel(i, j, r_p, g_p, b_p)
 
 def triangleSet(point, color, antializasing = True, colorPerVertex = False):
     mat_width = int(len(point)/3)
@@ -305,9 +313,11 @@ def indexedTriangleStripSet(point, index, color, antialiasing = False, colorPerV
             pos2 = int(index[i + 1]*3)
             pos3 = int(index[i + 2]*3)
             if i % 2 == 0:
-                triangleSet([point[pos1], point[pos1 + 1], point[pos1 + 2], point[pos2], point[pos2 + 1], point[pos2 + 2], point[pos3], point[pos3 + 1], point[pos3 + 2]], color, antialiasing, colorPerVertex)
+                temp = [color[pos1], color[pos1+1], color[pos1+2], color[pos2], color[pos2+1], color[pos2+2], color[pos3], color[pos3+1], color[pos3+2]]
+                triangleSet([point[pos1], point[pos1 + 1], point[pos1 + 2], point[pos2], point[pos2 + 1], point[pos2 + 2], point[pos3], point[pos3 + 1], point[pos3 + 2]], temp, antialiasing, colorPerVertex)
             else:
-                triangleSet([point[pos2], point[pos2 + 1], point[pos2 + 2], point[pos1], point[pos1 + 1], point[pos1 + 2], point[pos3], point[pos3 + 1], point[pos3 + 2]], color, antialiasing, colorPerVertex)
+                temp = [color[pos2], color[pos2+1], color[pos2+2], color[pos1], color[pos1+1], color[pos1+1], color[pos3], color[pos3+1], color[pos3+2]]
+                triangleSet([point[pos2], point[pos2 + 1], point[pos2 + 2], point[pos1], point[pos1 + 1], point[pos1 + 2], point[pos3], point[pos3 + 1], point[pos3 + 2]], temp, antialiasing, colorPerVertex)
 
 
 
@@ -322,9 +332,6 @@ def box(size, color):
     triangleStripSet(side, [8], color, True)
     triangleStripSet(back, [4], color, True)
     triangleStripSet(front, [4], color, True)
-
-def colorEachPoint(coord, coordIndex, color, colorIndex):
-    return { (15, 10): [0.8, 0, 0] }
 
 
 def indexedFaceSet(coord, coordIndex, colorPerVertex, color, colorIndex, texCoord, texCoordIndex, current_color, current_texture):
@@ -351,8 +358,7 @@ def indexedFaceSet(coord, coordIndex, colorPerVertex, color, colorIndex, texCoor
     if not colorPerVertex and not current_texture:
         indexedTriangleStripSet(coord, coordIndex, current_color, False)
     elif colorPerVertex:
-        colorDict = colorEachPoint(coord, coordIndex, color, colorIndex)
-        indexedTriangleStripSet(coord, coordIndex, colorDict, False, True)
+        indexedTriangleStripSet(coord, coordIndex, color, False, True)
 
     
     # O print abaixo é só para vocês verificarem o funcionamento, deve ser removido.
