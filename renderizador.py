@@ -117,16 +117,45 @@ def destructureX(vertices):
 def destructureY(vertices):
     return vertices[1], vertices[3], vertices[5]
 
+def calculate_alpha(x, y, xa, xb, xc, ya, yb, yc):
+    return (-(x-xb)*(yc-yb) + (y-yb)*(xc-xb)) / (-(xa-xb)*(yc-yb) + (ya-yb)*(xc-xb))
+
+def calculate_beta(x, y, xa, xb, xc, ya, yb, yc):
+    return (-(x-xc)*(ya-yc) + (y-yc)*(xa-xc)) / (-(xb-xc)*(ya-yc) + (yb-yc)*(xa-xc))
+
+def calculate_gamma(alpha, beta):
+    return 1 - alpha - beta
+
 def calculate_color(x, y, vertices, color):
     xa, xb, xc = destructureX(vertices)
     ya, yb, yc = destructureY(vertices)
-    alpha = (-(x-xb)*(yc-yb) + (y-yb)*(xc-xb)) / (-(xa-xb)*(yc-yb) + (ya-yb)*(xc-xb))
-    beta = (-(x-xc)*(ya-yc) + (y-yc)*(xa-xc)) / (-(xb-xc)*(ya-yc) + (yb-yc)*(xa-xc))
-    gamma = 1 - alpha - beta
+    alpha = calculate_alpha(x, y, xa, xb, xc, ya, yb, yc)
+    beta = calculate_beta(x, y, xa, xb, xc, ya, yb, yc)
+    gamma = calculate_gamma(alpha, beta)
     r = alpha*color[0] + beta*color[3] + gamma*color[6]
     g = alpha*color[1] + beta*color[4] + gamma*color[7]
     b = alpha*color[2] + beta*color[5] + gamma*color[8]
     return 255*r, 255*g, 255*b
+
+def calculate_texture(x, y, image, text, vertices):
+    size_img_x = len(image)
+    size_img_y = len(image[0])
+    
+    xa, xb, xc = destructureX(vertices)
+    ya, yb, yc = destructureY(vertices)
+    alpha = calculate_alpha(x, y, xa, xb, xc, ya, yb, yc)
+    beta = calculate_beta(x, y, xa, xb, xc, ya, yb, yc)
+    gamma = calculate_gamma(alpha, beta)
+
+    ua, ub, uc = destructureX(text)
+    va, vb, vc = destructureY(text)
+    prop_x = alpha*ua + beta*ub + gamma*uc
+    prop_y = alpha*va + beta*vb + gamma*vc
+
+    prop_x = int(prop_x*size_img_x)
+    prop_y = int(prop_y*size_img_y)
+
+    return image[prop_x][prop_y][:3]
 
 def line_equation(P1, P2):
     A = P1[1] - P2[1]
@@ -239,8 +268,8 @@ def polyline2D(lineSegments, color):
             prevx0 = x0
             prevy0 = y0
 
-def triangleSet2D(vertices, color, antialiasing = True, colorPerVertex = False):
-    if not colorPerVertex:
+def triangleSet2D(vertices, color, antialiasing = True, colorPerVertex = False, texture = False, image = None, text = None):
+    if not colorPerVertex and not texture:
         r = int(255*color[0])
         g = int(255*color[1])
         b = int(255*color[2])
@@ -253,13 +282,15 @@ def triangleSet2D(vertices, color, antialiasing = True, colorPerVertex = False):
             if per_inside>0:
                 if colorPerVertex:
                     r, g, b = calculate_color(i, j, vertices, color)
+                if texture:
+                    r, g, b = calculate_texture(i, j, image, text, vertices)
 
                 r_p = int(r*per_inside) if antialiasing else r
                 g_p = int(g*per_inside) if antialiasing else g
                 b_p = int(b*per_inside) if antialiasing else b
                 gpu.GPU.set_pixel(i, j, r_p, g_p, b_p)
 
-def triangleSet(point, color, antializasing = True, colorPerVertex = False):
+def triangleSet(point, color, text, antializasing = True, colorPerVertex = False, texture = False, image = None):
     mat_width = int(len(point)/3)
     points = np.append(np.reshape(point, (mat_width, 3)).transpose(), np.ones((1, mat_width)), axis=0)
     points = np.matmul(pAndT.stack_transform[-1], points)
@@ -269,7 +300,7 @@ def triangleSet(point, color, antializasing = True, colorPerVertex = False):
     points = np.matmul(pAndT.screen_view, points)
     points = points[:2].transpose().reshape(mat_width*2)
     for i in range(0, len(points), 6):
-        triangleSet2D(points[i:i+6], color, antializasing, colorPerVertex)
+        triangleSet2D(points[i:i+6], color, antializasing, colorPerVertex, texture, image, text)
 
 
 def viewpoint(position, orientation, fieldOfView):
@@ -306,21 +337,28 @@ def triangleStripSet(point, stripCount, color, antialiasing = False, colorPerVer
         else:
             triangleSet([point[pos + 3], point[pos + 4], point[pos + 5], point[pos], point[pos + 1], point[pos + 2], point[pos + 6], point[pos + 7], point[pos + 8]], color, antialiasing)
 
-def indexedTriangleStripSet(point, index, color, colorIndex, antialiasing = False, colorPerVertex = False):
+def indexedTriangleStripSet(point, index, color, colorIndex, texCoord, texCoordIndex, antialiasing = False, colorPerVertex = False, texture = False, image = None):
     for i in range(len(index) - 3):
         if((index[i] != -1 and index[i + 1] != -1 and index[i + 2] != -1)):
             pos1 = int(index[i]*3)
             pos2 = int(index[i + 1]*3)
             pos3 = int(index[i + 2]*3)
-            col_pos1 = int(colorIndex[i]*3)
-            col_pos2 = int(colorIndex[i+1]*3)
-            col_pos3 = int(colorIndex[i+2]*3)
+            if colorPerVertex:
+                col_pos1 = int(colorIndex[i]*3)
+                col_pos2 = int(colorIndex[i+1]*3)
+                col_pos3 = int(colorIndex[i+2]*3)
+            if texture:
+                text_pos1 = int(texCoordIndex[i]*2)
+                text_pos2 = int(texCoordIndex[i + 1]*2)
+                text_pos3 = int(texCoordIndex[i + 2]*2)
             if i % 2 == 0:
-                temp = [color[col_pos1], color[col_pos1+1], color[col_pos1+2], color[col_pos2], color[col_pos2+1], color[col_pos2+2], color[col_pos3], color[col_pos3+1], color[col_pos3+2]]
-                triangleSet([point[pos1], point[pos1 + 1], point[pos1 + 2], point[pos2], point[pos2 + 1], point[pos2 + 2], point[pos3], point[pos3 + 1], point[pos3 + 2]], temp, antialiasing, colorPerVertex)
+                temp = [color[col_pos1], color[col_pos1+1], color[col_pos1+2], color[col_pos2], color[col_pos2+1], color[col_pos2+2], color[col_pos3], color[col_pos3+1], color[col_pos3+2]] if colorPerVertex else []
+                temp_text = [texCoord[text_pos1], texCoord[text_pos1 + 1], 0, texCoord[text_pos2], texCoord[text_pos2 + 1], 0, texCoord[text_pos3], texCoord[text_pos3 + 1], 0] if texture else []
+                triangleSet([point[pos1], point[pos1 + 1], point[pos1 + 2], point[pos2], point[pos2 + 1], point[pos2 + 2], point[pos3], point[pos3 + 1], point[pos3 + 2]], temp, temp_text, antialiasing, colorPerVertex, texture, image)
             else:
-                temp = [color[col_pos2], color[col_pos2+1], color[col_pos2+2], color[col_pos1], color[col_pos1+1], color[col_pos1+1], color[col_pos3], color[col_pos3+1], color[col_pos3+2]]
-                triangleSet([point[pos2], point[pos2 + 1], point[pos2 + 2], point[pos1], point[pos1 + 1], point[pos1 + 2], point[pos3], point[pos3 + 1], point[pos3 + 2]], temp, antialiasing, colorPerVertex)
+                temp = [color[col_pos2], color[col_pos2+1], color[col_pos2+2], color[col_pos1], color[col_pos1+1], color[col_pos1+1], color[col_pos3], color[col_pos3+1], color[col_pos3+2]] if colorPerVertex else []
+                temp_text = [texCoord[text_pos2], texCoord[text_pos2 + 1], 0, texCoord[text_pos1], texCoord[text_pos1 + 1], 0, texCoord[text_pos3], texCoord[text_pos3 + 1], 0] if texture else []
+                triangleSet([point[pos2], point[pos2 + 1], point[pos2 + 2], point[pos1], point[pos1 + 1], point[pos1 + 2], point[pos3], point[pos3 + 1], point[pos3 + 2]], temp, temp_text, antialiasing, colorPerVertex, texture, image)
 
 
 
@@ -359,17 +397,21 @@ def indexedFaceSet(coord, coordIndex, colorPerVertex, color, colorIndex, texCoor
     # implementadado um método para a leitura de imagens.
     # interpolação baricêntrica
     if not colorPerVertex and not current_texture:
-        indexedTriangleStripSet(coord, coordIndex, current_color, colorIndex, False)
+        indexedTriangleStripSet(coord, coordIndex, current_color, colorIndex, texCoord, texCoordIndex, False)
     elif colorPerVertex:
-        indexedTriangleStripSet(coord, coordIndex, color, colorIndex, False, True)
+        indexedTriangleStripSet(coord, coordIndex, color, colorIndex, texCoord, texCoordIndex, False, True)
+    elif texCoord:
+        print("pontos(u, v) = {0}, texCoordIndex = {1} --- {2}".format(texCoord, texCoordIndex, coordIndex))
+        image = gpu.GPU.load_texture(current_texture[0])
+        indexedTriangleStripSet(coord, coordIndex, color, colorIndex, texCoord, texCoordIndex, False, False, True, image)
 
     
     # O print abaixo é só para vocês verificarem o funcionamento, deve ser removido.
-    print("IndexedFaceSet : ")
+    # print("IndexedFaceSet : ")
     # if coord:
     #     print("\tpontos(x, y, z) = {0}, coordIndex = {1}".format(coord, coordIndex)) # imprime no terminal
-    if colorPerVertex:
-        print("\tcores(r, g, b) = {0}, colorIndex = {1}".format(color, colorIndex)) # imprime no terminal
+    # if colorPerVertex:
+    #     print("\tcores(r, g, b) = {0}, colorIndex = {1}".format(color, colorIndex)) # imprime no terminal
     # if texCoord:
     #     print("\tpontos(u, v) = {0}, texCoordIndex = {1}".format(texCoord, texCoordIndex)) # imprime no terminal
     # if(current_texture):
@@ -381,7 +423,7 @@ if __name__ == '__main__':
     # Valores padrão da aplicação
     # width = LARGURA
     # height = ALTURA
-    x3d_file = "exemplo8.x3d"
+    x3d_file = "exemplo9.x3d"
     image_file = "tela.png"
 
     # Tratando entrada de parâmetro
