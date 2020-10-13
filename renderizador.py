@@ -149,13 +149,12 @@ def calculate_texture(x, y, image, text, vertices):
 
     ua, ub, uc = destructureX(text)
     va, vb, vc = destructureY(text)
-    prop_x = alpha*ua + beta*ub + gamma*uc
-    prop_y = alpha*va + beta*vb + gamma*vc
+    u = alpha*ua + beta*ub + gamma*uc
+    v = alpha*va + beta*vb + gamma*vc
 
-    prop_x = int(prop_x*size_img_x)
-    prop_y = int(prop_y*size_img_y)
-
-    return image[prop_x][prop_y][:3]
+    u = int(u*size_img_x)
+    v = int(v*size_img_y)
+    return image[u][v][:3]
 
 def line_equation(P1, P2):
     A = P1[1] - P2[1]
