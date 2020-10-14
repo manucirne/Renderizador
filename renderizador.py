@@ -117,21 +117,16 @@ def destructureX(vertices):
 def destructureY(vertices):
     return vertices[1], vertices[3], vertices[5]
 
-def calculate_alpha(x, y, xa, xb, xc, ya, yb, yc):
-    return (-(x-xb)*(yc-yb) + (y-yb)*(xc-xb)) / (-(xa-xb)*(yc-yb) + (ya-yb)*(xc-xb))
-
-def calculate_beta(x, y, xa, xb, xc, ya, yb, yc):
-    return (-(x-xc)*(ya-yc) + (y-yc)*(xa-xc)) / (-(xb-xc)*(ya-yc) + (yb-yc)*(xa-xc))
-
-def calculate_gamma(alpha, beta):
-    return 1 - alpha - beta
+def calculate_baricenter(x, y, xa, xb, xc, ya, yb, yc):
+    alpha = (-(x-xb)*(yc-yb) + (y-yb)*(xc-xb)) / (-(xa-xb)*(yc-yb) + (ya-yb)*(xc-xb))
+    beta = (-(x-xc)*(ya-yc) + (y-yc)*(xa-xc)) / (-(xb-xc)*(ya-yc) + (yb-yc)*(xa-xc))
+    gamma = 1 - alpha - beta
+    return alpha, beta, gamma
 
 def calculate_color(x, y, vertices, color):
     xa, xb, xc = destructureX(vertices)
     ya, yb, yc = destructureY(vertices)
-    alpha = calculate_alpha(x, y, xa, xb, xc, ya, yb, yc)
-    beta = calculate_beta(x, y, xa, xb, xc, ya, yb, yc)
-    gamma = calculate_gamma(alpha, beta)
+    alpha, beta, gamma = calculate_baricenter(x, y, xa, xb, xc, ya, yb, yc)
     r = alpha*color[0] + beta*color[3] + gamma*color[6]
     g = alpha*color[1] + beta*color[4] + gamma*color[7]
     b = alpha*color[2] + beta*color[5] + gamma*color[8]
@@ -143,9 +138,7 @@ def calculate_texture(x, y, image, text, vertices):
     
     xa, xb, xc = destructureX(vertices)
     ya, yb, yc = destructureY(vertices)
-    alpha = calculate_alpha(x, y, xa, xb, xc, ya, yb, yc)
-    beta = calculate_beta(x, y, xa, xb, xc, ya, yb, yc)
-    gamma = calculate_gamma(alpha, beta)
+    alpha, beta, gamma = calculate_baricenter(x, y, xa, xb, xc, ya, yb, yc)
 
     ua, ub, uc = destructureX(text)
     va, vb, vc = destructureY(text)
