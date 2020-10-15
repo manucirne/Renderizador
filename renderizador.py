@@ -148,7 +148,7 @@ def calculate_texture(x, y, image, text, vertices):
     u = int(u*size_img_x)-1
     v = int(v*size_img_y)-1
     
-    return image[u][v][:3]
+    return image[-v][u][:3]
 
 def line_equation(P1, P2):
     A = P1[1] - P2[1]
@@ -394,7 +394,6 @@ def indexedFaceSet(coord, coordIndex, colorPerVertex, color, colorIndex, texCoor
     elif colorPerVertex:
         indexedTriangleStripSet(coord, coordIndex, color, colorIndex, texCoord, texCoordIndex, False, True)
     elif texCoord:
-        print("pontos(u, v) = {0}, texCoordIndex = {1} --- {2}".format(texCoord, texCoordIndex, coordIndex))
         image = gpu.GPU.load_texture(current_texture[0])
         indexedTriangleStripSet(coord, coordIndex, color, colorIndex, texCoord, texCoordIndex, False, False, True, image)
 
