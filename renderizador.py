@@ -144,9 +144,10 @@ def calculate_texture(x, y, image, text, vertices):
     va, vb, vc = destructureY(text)
     u = alpha*ua + beta*ub + gamma*uc
     v = alpha*va + beta*vb + gamma*vc
-
-    u = int(u*size_img_x)
-    v = int(v*size_img_y)
+    
+    u = int(u*size_img_x)-1
+    v = int(v*size_img_y)-1
+    
     return image[u][v][:3]
 
 def line_equation(P1, P2):
@@ -345,11 +346,11 @@ def indexedTriangleStripSet(point, index, color, colorIndex, texCoord, texCoordI
                 text_pos3 = int(texCoordIndex[i + 2]*2)
             if i % 2 == 0:
                 temp = [color[col_pos1], color[col_pos1+1], color[col_pos1+2], color[col_pos2], color[col_pos2+1], color[col_pos2+2], color[col_pos3], color[col_pos3+1], color[col_pos3+2]] if colorPerVertex else []
-                temp_text = [texCoord[text_pos1], texCoord[text_pos1 + 1], 0, texCoord[text_pos2], texCoord[text_pos2 + 1], 0, texCoord[text_pos3], texCoord[text_pos3 + 1], 0] if texture else []
+                temp_text = [texCoord[text_pos1], texCoord[text_pos1 + 1], texCoord[text_pos2], texCoord[text_pos2 + 1], texCoord[text_pos3], texCoord[text_pos3 + 1]] if texture else []
                 triangleSet([point[pos1], point[pos1 + 1], point[pos1 + 2], point[pos2], point[pos2 + 1], point[pos2 + 2], point[pos3], point[pos3 + 1], point[pos3 + 2]], temp, temp_text, antialiasing, colorPerVertex, texture, image)
             else:
                 temp = [color[col_pos2], color[col_pos2+1], color[col_pos2+2], color[col_pos1], color[col_pos1+1], color[col_pos1+1], color[col_pos3], color[col_pos3+1], color[col_pos3+2]] if colorPerVertex else []
-                temp_text = [texCoord[text_pos2], texCoord[text_pos2 + 1], 0, texCoord[text_pos1], texCoord[text_pos1 + 1], 0, texCoord[text_pos3], texCoord[text_pos3 + 1], 0] if texture else []
+                temp_text = [texCoord[text_pos2], texCoord[text_pos2 + 1], texCoord[text_pos1], texCoord[text_pos1 + 1], texCoord[text_pos3], texCoord[text_pos3 + 1]] if texture else []
                 triangleSet([point[pos2], point[pos2 + 1], point[pos2 + 2], point[pos1], point[pos1 + 1], point[pos1 + 2], point[pos3], point[pos3 + 1], point[pos3 + 2]], temp, temp_text, antialiasing, colorPerVertex, texture, image)
 
 
